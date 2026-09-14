@@ -214,6 +214,7 @@
 <script>
 /* عدّل أسماء الإدارات هنا فقط */
 const DEPARTMENTS_CONFIG = [
+  { id: 15, name: "التواصل والمتابعة",                 icon: "mail"      },
   { id: 1,  name: "إدارة السكن الطلابي",              icon: "home"      },
   { id: 2,  name: "إدارة النقل الطلابي",               icon: "compass"   },
   { id: 3,  name: "وحدة التوجيه وحقوق الطالب",          icon: "shield"    },
@@ -242,6 +243,26 @@ const CATEGORY_SHORT = {
 };
 const CATEGORY_KEYS = Object.keys(CATEGORY_LABELS);
 
+// صياغة مخصصة للمعايير حسب الإدارة (اختيارية) — نفس الترتيب بالضبط المستخدم بصفحة التقييم
+const CATEGORY_LABELS_OVERRIDES = {
+  15: { // التواصل والمتابعة
+    quality: "دقة الرد ووضوح المعلومة",
+    speed: "سرعة الرد على الاستفسار/المعاملة",
+    staff: "احترافية التعامل بالتواصل",
+    clarity: "وضوح متابعة حالة المعاملة",
+    access: "سهولة التواصل (الوصول للرد)"
+  }
+};
+const CATEGORY_SHORT_OVERRIDES = {
+  15: { quality: "دقة الرد", speed: "سرعة الرد", staff: "الاحترافية", clarity: "المتابعة", access: "التواصل" }
+};
+function categoryLabelsFor(deptId){
+  return CATEGORY_LABELS_OVERRIDES[deptId] || CATEGORY_LABELS;
+}
+function categoryShortFor(deptId){
+  return CATEGORY_SHORT_OVERRIDES[deptId] || CATEGORY_SHORT;
+}
+
 function freshDeptState(cfg){
   return {
     ...cfg, avgRating: null, reviewCount: 0, satisfaction: null, lastUpdate: null,
@@ -267,15 +288,28 @@ const ICONS = {
   medical: `<circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>`,
   trophy: `<path d="M7 4 H17 V9 a5 5 0 0 1 -10 0 V4 Z"/><path d="M7 5 H4 v2 a3 3 0 0 0 3 3"/><path d="M17 5 H20 v2 a3 3 0 0 1 -3 3"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="9" y1="20" x2="9.5" y2="18"/><line x1="15" y1="20" x2="14.5" y2="18"/>`,
   edit: `<path d="M4 20 L4 16.5 L15 5.5 a1.5 1.5 0 0 1 2 0 l1.5 1.5 a1.5 1.5 0 0 1 0 2 L7.5 20 Z"/><line x1="13.5" y1="7.5" x2="16.5" y2="10.5"/>`,
-  check: `<polyline points="5,12.5 10,17.5 19,7"/>`
+  check: `<polyline points="5,12.5 10,17.5 19,7"/>`,
+  mail: `<rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4 6.5 L12 13 L20 6.5" stroke-linejoin="round"/>`
 };
 function iconSvg(key, size){
   return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICONS[key] || ICONS.star}</svg>`;
 }
+
+/* ================= تنظيف النصوص لمنع XSS ================= */
+function escapeHtml(str){
+  if(str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 const LOGO_DATA_URI = "data:image/png;base64,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";
 
 /* ---------------- ربط بملف التقييم عبر Google Sheets ---------------- */
-const API_URL = "https://script.google.com/macros/s/AKfycbxPqcopRlwXQoChjJ_6_AiIjagojxENf2baACgxlAQCFtN33py9NhkO6NKIVHGRPNj6bA/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzthjga1tGhduF1PWnztR6gI20g_ubdZYYBt-ORQ6458K6B-50mHc2BJqWNjH0_MA2atA/exec";
+const API_TOKEN = "TabukSA2026-XyQ9pLmZ7"; // لازم يطابق SECRET_TOKEN بالسكربت بالضبط
 
 function withTimeout(promise, ms){
   return new Promise((resolve, reject) => {
@@ -387,7 +421,7 @@ function rebuildDepartments(){
 
 async function loadAllRatings(){
   try{
-    const res = await withTimeout(fetch(API_URL), 15000);
+    const res = await withTimeout(fetch(API_URL + "?token=" + encodeURIComponent(API_TOKEN)), 15000);
     const data = await res.json();
     RAW_NAMES = (data && data.names) || {};
     RAW_RATINGS = (data && data.ratings) || [];
@@ -439,7 +473,7 @@ function setFilterYear(v){ state.filterYear = v; rebuildDepartments(); render();
 function setFilterMonth(v){ state.filterMonth = v; rebuildDepartments(); render(); }
 function clearTimeFilter(){ state.filterYear = ""; state.filterMonth = ""; rebuildDepartments(); render(); }
 async function submitComplaint(deptId, complaintType, complaintText){
-  const payload = JSON.stringify({ action: "addComplaint", deptId, complaintType, complaintText });
+  const payload = JSON.stringify({ token: API_TOKEN, action: "addComplaint", deptId, complaintType, complaintText });
   const res = await withTimeout(fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -497,7 +531,11 @@ function renderPinScreen(){
 function renderHeader(){
   const totalReviews = DEPARTMENTS.reduce((s,d)=>s+d.reviewCount,0);
   const ratedDepts = DEPARTMENTS.filter(d=>d.avgRating!==null);
-  const overallAvg = ratedDepts.length ? (ratedDepts.reduce((s,d)=>s+d.avgRating,0)/ratedDepts.length) : null;
+  // متوسط مرجّح فعلي: مجموع (متوسط الإدارة × عدد تقييماتها) لكل الإدارات ÷ إجمالي عدد التقييمات
+  // (وليس متوسط بسيط لمتوسطات الإدارات، اللي يعطي وزن متساوٍ لإدارة عندها تقييمين مقابل إدارة عندها 500)
+  const overallAvg = totalReviews > 0
+    ? ratedDepts.reduce((s,d)=>s + d.avgRating*d.reviewCount, 0) / totalReviews
+    : null;
   return `
   <div class="header">
     <div class="header-inner">
@@ -546,7 +584,7 @@ function renderRankingChart(){
     <h3>ترتيب الإدارات حسب متوسط التقييم</h3>
     ${ranked.map(d => `
       <div class="rank-row">
-        <div class="rank-name">${d.name}</div>
+        <div class="rank-name">${escapeHtml(d.name)}</div>
         <div class="rank-bar-track"><div class="rank-bar-fill" style="width:${(d.avgRating/5*100).toFixed(0)}%"></div></div>
         <div class="rank-val">${d.avgRating.toFixed(1)}</div>
       </div>
@@ -577,7 +615,7 @@ function renderGrid(){
       <div class="card">
         <div class="card-top">
           <div class="icon-badge">${iconSvg(d.icon,24)}</div>
-          <div class="card-name">${d.name}</div>
+          <div class="card-name">${escapeHtml(d.name)}</div>
         </div>
         <div class="card-mid">
           <div class="mini-stat"><div class="num">${fmtRating(d.avgRating)}</div><div class="lbl">متوسط التقييم</div></div>
@@ -605,7 +643,7 @@ function renderTable(){
       <tbody>
         ${DEPARTMENTS.map(d => `
           <tr onclick="openDetail(${d.id})">
-            <td style="font-weight:700;color:var(--primary-dark);">${d.name}</td>
+            <td style="font-weight:700;color:var(--primary-dark);">${escapeHtml(d.name)}</td>
             <td>${fmtRating(d.avgRating)}</td>
             <td>${d.reviewCount}</td>
             <td class="${d.satisfaction===null ? 'muted-cell':''}">${fmtPercent(d.satisfaction)}</td>
@@ -621,6 +659,7 @@ function renderTable(){
 function catChart(dept){
   const hasAny = CATEGORY_KEYS.some(k => dept.categories[k] !== null);
   if(!hasAny) return `<div class="cat-chart-empty">لا توجد بيانات كافية بعد لعرض الرسم البياني.</div>`;
+  const shortLabels = categoryShortFor(dept.id);
   return `
   <div class="cat-chart">
     ${CATEGORY_KEYS.map(k => {
@@ -630,7 +669,7 @@ function catChart(dept){
         <div class="cat-bar-col">
           <div class="cat-bar-val">${fmtRating(dept.categories[k])}</div>
           <div class="cat-bar-shape" style="height:${hpct}%"></div>
-          <div class="cat-bar-name">${CATEGORY_SHORT[k]}</div>
+          <div class="cat-bar-name">${shortLabels[k]}</div>
         </div>`;
     }).join("")}
   </div>`;
@@ -641,18 +680,18 @@ function renderDetail(id){
   if(!d) return renderGrid();
   const nameBlock = state.editingDeptId === d.id ? `
       <div class="name-edit-row">
-        <input id="deptNameInput" class="name-edit-input" type="text" value="${d.name.replace(/"/g,'&quot;')}" maxlength="80">
+        <input id="deptNameInput" class="name-edit-input" type="text" value="${escapeHtml(d.name)}" maxlength="80">
         <button class="icon-only-btn save" onclick="saveEditName(${d.id})" aria-label="حفظ">${iconSvg('check',16)}</button>
         <button class="icon-only-btn" onclick="cancelEditName()" aria-label="إلغاء">✕</button>
       </div>` : `
       <div style="display:flex;align-items:center;gap:8px;">
-        <h2>${d.name}</h2>
+        <h2>${escapeHtml(d.name)}</h2>
         <button class="icon-only-btn" onclick="startEditName(${d.id})" aria-label="تعديل الاسم">${iconSvg('edit',15)}</button>
       </div>`;
   const commentsHtml = d.comments.length ? d.comments.map(c => `
       <div class="comment-item">
-        <div class="meta"><span>${c.author}${c.service ? " · " + c.service : ""}</span><span>${c.date}</span></div>
-        <div class="txt">${c.text}</div>
+        <div class="meta"><span>${escapeHtml(c.author)}${c.service ? " · " + escapeHtml(c.service) : ""}</span><span>${escapeHtml(c.date)}</span></div>
+        <div class="txt">${escapeHtml(c.text)}</div>
       </div>`).join("") : `
       <div class="comments-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICONS.chat}</svg>
@@ -664,7 +703,7 @@ function renderDetail(id){
       ${d.serviceStats.map(s => `
         <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface-alt,var(--surface-1));border-radius:var(--radius,8px);padding:10px 14px;">
           <div>
-            <div style="font-weight:600;font-size:13.5px;">${s.name}</div>
+            <div style="font-weight:600;font-size:13.5px;">${escapeHtml(s.name)}</div>
             <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${s.count} تقييم</div>
           </div>
           <div style="font-weight:700;font-size:15px;">${pctText(s.avg)}</div>
@@ -675,10 +714,10 @@ function renderDetail(id){
   const raterStatsHtml = d.raterStats && d.raterStats.length ? `
     <div class="stat-card-grid">
       ${d.raterStats.map(r => `
-        <button type="button" onclick="setRaterFilter('${r.name}')" class="stat-card"
+        <button type="button" onclick="setRaterFilter('${escapeHtml(r.name)}')" class="stat-card"
           style="cursor:pointer;border:2px solid ${state.raterFilter===r.name ? 'var(--primary)' : 'transparent'};display:flex;flex-direction:column;align-items:center;gap:4px;">
           <div style="color:var(--primary);opacity:.85;">${iconSvg(RATER_ICONS[r.name] || "users", 18)}</div>
-          <div class="pct">${r.count}</div><div class="lbl">${r.name}</div>
+          <div class="pct">${r.count}</div><div class="lbl">${escapeHtml(r.name)}</div>
         </button>
       `).join("")}
     </div>
@@ -690,13 +729,13 @@ function renderDetail(id){
         <div class="comment-item">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-              <span style="background:var(--surface-alt);border:1px solid var(--border);border-radius:99px;padding:3px 10px;font-size:11.5px;font-weight:700;color:var(--primary-dark);">${s.raterType}</span>
-              <span style="font-weight:700;font-size:13px;">${s.service}</span>
+              <span style="background:var(--surface-alt);border:1px solid var(--border);border-radius:99px;padding:3px 10px;font-size:11.5px;font-weight:700;color:var(--primary-dark);">${escapeHtml(s.raterType)}</span>
+              <span style="font-weight:700;font-size:13px;">${escapeHtml(s.service)}</span>
             </div>
             <span style="font-weight:800;font-size:14px;color:var(--primary);">${s.score}%</span>
           </div>
           <div class="meta"><span>${s.date}</span></div>
-          ${s.comment ? `<div class="txt">${s.comment}</div>` : ""}
+          ${s.comment ? `<div class="txt">${escapeHtml(s.comment)}</div>` : ""}
         </div>
       `).join("")}
     </div>` : "";
@@ -729,9 +768,9 @@ function renderDetail(id){
     <h3 class="section-title" style="margin-top:26px;">الشكاوى (${d.complaints.length})</h3>
     ${d.complaints.length ? d.complaints.map(c => `
       <div class="comment-item">
-        <div class="complaint-tag">${c.type}</div>
-        <div class="meta"><span>${c.raterType ? c.raterType + " · " : ""}${c.service || ""}</span><span>${c.date}</span></div>
-        <div class="txt">${c.text || "بدون تفاصيل إضافية"}</div>
+        <div class="complaint-tag">${escapeHtml(c.type)}</div>
+        <div class="meta"><span>${c.raterType ? escapeHtml(c.raterType) + " · " : ""}${escapeHtml(c.service) || ""}</span><span>${c.date}</span></div>
+        <div class="txt">${escapeHtml(c.text) || "بدون تفاصيل إضافية"}</div>
       </div>`).join("") : `
       <div class="comments-box">
         <p class="strong">لا توجد شكاوى لهذه الإدارة</p>
@@ -759,7 +798,7 @@ async function saveEditName(id){
     await withTimeout(fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action:"rename", deptId: id, name: newName })
+      body: JSON.stringify({ token: API_TOKEN, action:"rename", deptId: id, name: newName })
     }), 15000);
   }catch(e){ /* تجاهل خطأ الحفظ */ }
   const d = DEPARTMENTS.find(x => x.id === id);
